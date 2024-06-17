@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Store New Polling Unit Result</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="max-w-lg mx-auto p-6 bg-white rounded-lg shadow-md space-y-4">
+        <h1 class="text-3xl font-bold text-center">Store New Polling Unit Result</h1>
+
+        <form id="newPollingUnitForm" class="space-y-4">
+            <div class="space-y-2">
+                <label for="pollingUnitUniqueId" class="block font-semibold">Polling Unit Unique ID</label>
+                <input type="number" id="pollingUnitUniqueId" name="pollingUnitUniqueId" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500" required>
+            </div>
+
+            <div id="partyResultsContainer">
+                <label class="block font-semibold">Party Results</label>
+                <div id="partyResults" class="space-y-2">
+                    <div class="flex space-x-2">
+                        <input type="text" name="partyAbbreviation[]" placeholder="Party Abbreviation" class="w-1/2 px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500" required>
+                        <input type="number" name="partyScore[]" placeholder="Party Score" class="w-1/2 px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500" required>
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" onclick="addPartyResultField()" class="bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600">Add Party Result</button>
+
+            <button type="submit" class="bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600">Submit</button>
+        </form>
+
+        <script>
+            function addPartyResultField() {
+                const container = document.getElementById('partyResults');
+                const div = document.createElement('div');
+                div.className = 'flex space-x-2';
+                div.innerHTML = `
+                    <input type="text" name="partyAbbreviation[]" placeholder="Party Abbreviation" class="w-1/2 px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500" required>
+                    <input type="number" name="partyScore[]" placeholder="Party Score" class="w-1/2 px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500" required>
+                `;
+                container.appendChild(div);
+            }
+
+            document.getElementById('newPollingUnitForm').addEventListener('submit', async function(event) {
+                event.preventDefault();
+                
+                const formData = new FormData(this);
+                const pollingUnitUniqueId = formData.get('pollingUnitUniqueId');
+                const partyResults = [];
+
+                formData.getAll('partyAbbreviation[]').forEach((abbr, index) => {
+                    partyResults.push({
+                        party_abbreviation: abbr,
+                        party_score: formData.getAll('partyScore[]')[index]
+                    });
+                });
+
+                const response = await fetch('/result/new_polling_unit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        polling_unit_uniqueid: pollingUnitUniqueId,
+                        party_results: partyResults,
+                        user_name: "Bincom"
+                    })
+                });
+
+                if (response.ok) {
+                    alert('Polling unit result stored successfully!');
+                    this.reset();
+                } else {
+                    const errorMessage = await response.text();
+                    alert(`Failed to store polling unit result: ${errorMessage}`);
+                }
+            });
+        </script>
+    </div>
+</body>
+</html>
